@@ -1,5 +1,6 @@
 import express from 'express';
 import { SignUpSchema, SignInSchema } from '@repo/common/types';
+import { middleware } from './middleware';
 const app = express();
 
 app.use(express.json());
@@ -44,8 +45,8 @@ app.post("/signin", (req, res) => {
 
 })
 
-app.post("/room", (req, res) => {
-
+app.post("/room", middleware, (req, res) => {
+    
 })
 
 app.listen(port, () => {
