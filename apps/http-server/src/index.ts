@@ -1,9 +1,10 @@
 import express from 'express';
-import { SignUpSchema, SignInSchema } from '@repo/common/types';
+import { SignUpSchema, SignInSchema, CreateRoomSchema } from '@repo/common/types';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@repo/db/client'
 import { middleware } from './middleware';
 import { JWT_SECRET } from '@repo/backend-common/config';
+import { AuthenticatedRequest } from './types/express';
 
 const app = express();
 
@@ -117,8 +118,67 @@ app.post("/signin", async (req, res) => {
 
 })
 
-app.post("/room", middleware, (req, res) => {
-    
+app.post("/room", middleware, async (req : AuthenticatedRequest, res) => {
+    if (!req.userId) {
+        res.status(401).json({ 
+            message: "Unauthorized" 
+        });
+        return;
+    }
+
+    const roomName = req.body.roomName;
+    if (!roomName) {
+        res.status(400).json({
+            message: "Please provide all required fields"
+        })
+        return;
+    }
+    const correctRoomBody = CreateRoomSchema.safeParse(req.body)
+    if (!correctRoomBody.success) {
+        const errorMessage = correctRoomBody.error.errors.map((error) => error.message)
+        res.status(411).json({
+            message: errorMessage
+        })
+        return;
+    }
+    const userId = req.userId;
+    try {
+        const room = await prisma.room.create({
+            data: {
+                slug: correctRoomBody.data.roomName,
+                adminId: userId
+            }
+        })
+        const user = await prisma.user.findFirst({
+            where: {
+                id: userId
+            }
+        })
+        res.status(200).json({
+            message: "Room created successfully",
+            room: {
+                id: room.id,
+                slug: room.slug,
+                adminId: room.adminId
+            },
+            user: {
+                id: user?.id,
+                email: user?.email,
+                name: user?.name
+            }
+        })
+    } catch (e : any) {
+        if (e.code == "P2002") {
+            res.status(400).json({
+                message: "Room already exists"
+            })
+        }
+        console.log(e);
+        res.status(500).json({
+            message: "Internal server error"
+        })
+        return;
+    }
 })
 
 app.listen(port, () => {
