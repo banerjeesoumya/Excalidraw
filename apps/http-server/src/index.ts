@@ -1,8 +1,8 @@
 import express from 'express';
 import { SignUpSchema, SignInSchema } from '@repo/common/types';
 import jwt from 'jsonwebtoken';
+import { prisma } from '@repo/db/client'
 import { middleware } from './middleware';
-import { prismaClient } from '@repo/db/client'
 import { JWT_SECRET } from '@repo/backend-common/config';
 
 const app = express();
@@ -11,9 +11,10 @@ app.use(express.json());
 const port = 3005;
 
 app.post("/signup", async (req, res) => {
-    const email = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
     const name = req.body.name;
+    console.log(email, password, name);
     if (!email || !password || !name) {
         res.status(400).json({
             message: "Please provide all the fields"
@@ -29,7 +30,7 @@ app.post("/signup", async (req, res) => {
         return;
     }
     try {
-        const userExists = await prismaClient.user.findUnique({
+        const userExists = await prisma.user.findUnique({
             where: {
                 email: correctSignUpBody.data.email
             }
@@ -39,7 +40,7 @@ app.post("/signup", async (req, res) => {
                 message: "User already exists"
             })
         } else {
-            const user = await prismaClient.user.create({
+            const user = await prisma.user.create({
                 data: {
                     email: correctSignUpBody.data.email,
                     password: correctSignUpBody.data.password,
@@ -66,9 +67,9 @@ app.post("/signup", async (req, res) => {
 });
 
 app.post("/signin", async (req, res) => {
-    const username = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
-    if (!username || !password) {
+    if (!email || !password) {
         res.status(400).json({
             message: "Please provide all required fields"
         })
@@ -82,7 +83,7 @@ app.post("/signin", async (req, res) => {
         return;
     }
     try {
-        const user = await prismaClient.findUnique({
+        const user = await prisma.user.findUnique({
             where:{
                 email: correctSignInBody.data.email,
                 password: correctSignInBody.data.password
@@ -94,7 +95,7 @@ app.post("/signin", async (req, res) => {
             })
             return; 
         }
-        const token = await jwt.sign({
+        const token = jwt.sign({
             id: user.id
         }, JWT_SECRET)
         res.status(200).json({
