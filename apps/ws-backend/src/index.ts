@@ -1,6 +1,7 @@
 import WebSocket, { WebSocketServer } from 'ws';
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { JWT_SECRET } from '@repo/backend-common/config'
+import { prisma } from '@repo/db/client';
 
 const wss = new WebSocketServer({
     port : 8080 
@@ -54,9 +55,9 @@ wss.on('connection', (ws, request) => {
         ws: ws
     })
 
-    ws.on('message', (msg) => {
-        const pasrsedData = JSON.parse(msg.toString());
-        const { type, roomId } = pasrsedData
+    ws.on('message', async (msg) => {
+        const parsedData = JSON.parse(msg.toString());
+        const { type, roomId } = parsedData
         if  (type === 'join') {
             const user = users.find((user) => user.userId === userId)
             if (user) {
@@ -84,8 +85,19 @@ wss.on('connection', (ws, request) => {
             }
         }
         if (type === 'chat') {
-            const roomId = pasrsedData.roomId
-            const message = pasrsedData.message
+            const roomId = parsedData.roomId
+            const message = parsedData.message
+        
+            await prisma.chat.create({
+                data: {
+                    roomId: roomId,
+                    userId: userId,
+                    message: message
+                }
+            }).catch((e) => {
+                console.log('Error creating chat message', e)
+            })
+
             users.forEach((user) => {
                 if (user.rooms.includes(roomId)) {
                     user.ws.send(JSON.stringify({
