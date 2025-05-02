@@ -143,36 +143,42 @@ app.post("/room", middleware, async (req : AuthenticatedRequest, res) => {
     }
     const userId = req.userId;
     try {
-        const room = await prisma.room.create({
-            data: {
-                slug: correctRoomBody.data.roomName,
-                adminId: userId
+        const roomExists = await prisma.room.findUnique({
+            where:{
+                slug: correctRoomBody.data.roomName
             }
         })
-        const user = await prisma.user.findFirst({
-            where: {
-                id: userId
-            }
-        })
-        res.status(200).json({
-            message: "Room created successfully",
-            room: {
-                id: room.id,
-                slug: room.slug,
-                adminId: room.adminId
-            },
-            user: {
-                id: user?.id,
-                email: user?.email,
-                name: user?.name
-            }
-        })
-    } catch (e : any) {
-        if (e.code == "P2002") {
+        if (roomExists) {
             res.status(400).json({
-                message: "Room already exists"
+                message: "Room already Exists"
+            })
+        } else {
+            const room = await prisma.room.create({
+                data: {
+                    slug: correctRoomBody.data.roomName,
+                    adminId: userId
+                }
+            })
+            const user = await prisma.user.findFirst({
+                where: {
+                    id: userId
+                }
+            })
+            res.status(200).json({
+                message: "Room created successfully",
+                room: {
+                    id: room.id,
+                    slug: room.slug,
+                    adminId: room.adminId
+                },
+                user: {
+                    id: user?.id,
+                    email: user?.email,
+                    name: user?.name
+                }
             })
         }
+    } catch (e) {
         console.log(e);
         res.status(500).json({
             message: "Internal server error"
