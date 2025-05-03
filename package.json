@@ -4,6 +4,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "db:start": "docker run --env-file=.env -d -p 5432:5432 postgres",
+
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
