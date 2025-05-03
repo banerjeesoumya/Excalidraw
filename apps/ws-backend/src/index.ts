@@ -13,7 +13,7 @@ wss.on('listening',() => {
 
 interface User {
     ws: WebSocket,
-    rooms: string[],
+    rooms: number[],
     userId: string 
 }
 
@@ -57,59 +57,76 @@ wss.on('connection', (ws, request) => {
 
     ws.on('message', async (msg) => {
         const parsedData = JSON.parse(msg.toString());
-        const { type, roomId } = parsedData
-        if  (type === 'join') {
-            const user = users.find((user) => user.userId === userId)
-            if (user) {
-                user.rooms.push(roomId)
-                ws.send(JSON.stringify({
-                    message: `User ${userId} joined room ${roomId}`
-                }))
-            } else {
-                ws.send(JSON.stringify({
-                    message: `User ${userId} not found in room ${roomId}`
-                }))
+        const { type, roomName } = parsedData
+        const roomExists = await prisma.room.findUnique({
+            where:{
+                slug: roomName
             }
-        }
-        if (type === 'leave') {
-            const user = users.find((user) => user.userId === userId)
-            if (user) {
-                user.rooms = user.rooms.filter((room) => room !== roomId)
-                ws.send(JSON.stringify({
-                    message: `User ${userId} left room ${roomId}`
-                }))
-            } else {
-                ws.send(JSON.stringify({
-                    message: `User ${userId} not found in room ${roomId}`
-                }))
-            }
-        }
-        if (type === 'chat') {
-            const roomId = parsedData.roomId
-            const message = parsedData.message
-        
-            await prisma.chat.create({
-                data: {
-                    roomId: roomId,
-                    userId: userId,
-                    message: message
+        })
+        if (!roomExists) {
+            ws.send(JSON.stringify({
+                message: `Room ${roomName} does not exist`,
+            }))
+        } else {
+            const roomId = roomExists.id
+            const userDet = await prisma.user.findUnique({
+                where: {
+                    id: userId
                 }
-            }).catch((e) => {
-                console.log('Error creating chat message', e)
             })
-
-            users.forEach((user) => {
-                if (user.rooms.includes(roomId)) {
-                    user.ws.send(JSON.stringify({
-                        type: 'chat',
-                        roomId: roomId,
-                        message: `User ${userId} sent message to room ${roomId}`,
-                        data: {
-                            message: message,
-                        }
+            if  (type === 'join') {
+                const user = users.find((user) => user.userId === userId)
+                if (user) {
+                    user.rooms.push(roomId)
+                    ws.send(JSON.stringify({
+                        message: `User ${userDet?.name} joined room ${roomExists.slug}`,
+                    }))
+                } else {
+                    ws.send(JSON.stringify({
+                        message: `User ${userDet?.name} not found in room ${roomExists.slug}`
                     }))
                 }
-            })
+            }
+            if (type === 'leave') {
+                const user = users.find((user) => user.userId === userId)
+                if (user && user.rooms.includes(roomId)) {
+                    user.rooms = user.rooms.filter((room) => room !== roomId)
+                    ws.send(JSON.stringify({
+                        message: `User ${userDet?.name} left room ${roomExists.slug}`
+                    }))
+                } else {
+                    ws.send(JSON.stringify({
+                        message: `User ${userDet?.name} not found in room ${roomExists.slug}`
+                    }))
+                }
+            }
+            if (type === 'chat') {
+                const roomId = roomExists.id
+                const message = parsedData.message
+                
+                await prisma.chat.create({
+                    data: {
+                        roomId: roomId,
+                        userId: userId,
+                        message: message
+                    }
+                }).catch((e) => {
+                    console.log('Error creating chat message', e)
+                })
+    
+                users.forEach((user) => {
+                    if (user.rooms.includes(roomId)) {
+                        user.ws.send(JSON.stringify({
+                            type: 'chat',
+                            roomId: roomId,
+                            message: `User ${userDet?.name} sent message to room ${roomExists.slug}`,
+                            data: {
+                                message: message,
+                            }
+                        }))
+                    }
+                })
+            }
         }
 
     })
