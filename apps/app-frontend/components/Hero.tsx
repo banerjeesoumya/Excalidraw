@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@repo/ui/button";
 import Link from "next/link";
-import { ArrowRight, Pencil } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { APP_DESCRIPTION } from "@/lib/constants";
 
 export function Hero() {

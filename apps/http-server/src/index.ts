@@ -5,8 +5,11 @@ import { prisma } from '@repo/db/client'
 import { middleware } from './middleware';
 import { JWT_SECRET } from '@repo/backend-common/config';
 import { AuthenticatedRequest } from './types/express';
+import cors from 'cors';
 
 const app = express();
+
+app.use(cors())
 
 app.use(express.json());
 const port = 3005;
