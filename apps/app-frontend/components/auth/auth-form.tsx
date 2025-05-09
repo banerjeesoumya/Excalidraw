@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { SignUpSchema, SignInSchema } from "@repo/common/types";
+import api from "@/lib/axios";
+import { AxiosError } from "axios";
 
 export type AuthFormProps = {
   type: "signin" | "signup";
@@ -106,16 +108,19 @@ export function AuthForm({ type }: AuthFormProps) {
     
     try {
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const endpoint = type === "signin" ? "signin" : "signup";
+      const res = await api.post(`/${endpoint}`, formData);
+      const { token } = res.data
+      console.log(res);
+      localStorage.setItem(`${endpoint}-token`, token);
+      toast.success(type === "signin" ? "Successfully signed in!" : "Account created successfully!");
+      window.location.href = "/dashboard";
       
-      if (type === "signin") {
-        toast.success("Successfully signed in!");
-      } else {
-        toast.success("Account created successfully!");
-      }
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
-      console.log(error);
+      const err = error as AxiosError<{ message: string }>;
+      const message = err.response?.data?.message || "Something went wrong. Please try again.";
+      console.log(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@repo/ui/button";
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
 
 export function NavBar() {
@@ -47,12 +48,16 @@ export function NavBar() {
           </div>
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            <Button variant="outline" className="rounded-full">
-              Login
-            </Button>
-            <Button className="rounded-full bg-excali-blue hover:bg-excali-blue/80">
-              Try Now
-            </Button>
+            <Link href="/signin">
+              <Button variant="outline" className="rounded-full">
+                Login
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="rounded-full bg-excali-blue hover:bg-excali-blue/80">
+                Try Now
+              </Button>
+            </Link>
           </div>
           <div className="flex md:hidden">
             <ThemeToggle />
