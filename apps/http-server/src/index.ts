@@ -1,5 +1,5 @@
 import express from 'express';
-import { SignUpSchema, SignInSchema, CreateRoomSchema } from '@repo/common/types';
+import { signinSchema, signupSchema, createroomSchema } from '@repo/common/types';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@repo/db/client'
 import { middleware } from './middleware';
@@ -22,7 +22,7 @@ app.post("/signup", async (req, res) => {
         })
         return;
     }
-    const correctSignUpBody = SignUpSchema.safeParse(req.body);
+    const correctSignUpBody = signupSchema.safeParse(req.body)
     if (!correctSignUpBody.success) {
         const errorMessage = correctSignUpBody.error.errors.map((error) => error.message)
         res.status(411).json({
@@ -75,7 +75,7 @@ app.post("/signin", async (req, res) => {
             message: "Please provide all required fields"
         })
     }
-    const correctSignInBody = SignInSchema.safeParse(req.body)
+    const correctSignInBody = signinSchema.safeParse(req.body)
     if (!correctSignInBody.success) {
         const errorMessage = correctSignInBody.error.errors.map((error) => error.message)
         res.status(411).json({
@@ -133,7 +133,7 @@ app.post("/room", middleware, async (req : AuthenticatedRequest, res) => {
         })
         return;
     }
-    const correctRoomBody = CreateRoomSchema.safeParse(req.body)
+    const correctRoomBody = createroomSchema.safeParse(req.body)
     if (!correctRoomBody.success) {
         const errorMessage = correctRoomBody.error.errors.map((error) => error.message)
         res.status(411).json({
