@@ -6,7 +6,10 @@ import { middleware } from './middleware';
 import { JWT_SECRET } from '@repo/backend-common/config';
 import { AuthenticatedRequest } from './types/express';
 import cors from 'cors';
+import { config } from 'dotenv';
+import path from 'path';
 
+config({ path: path.resolve(__dirname, '../../../packages/db/.env') });
 const app = express();
 
 app.use(cors())
